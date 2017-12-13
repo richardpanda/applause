@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"sort"
 	"strings"
 	"text/tabwriter"
+	"time"
 )
 
 type Creator struct {
@@ -46,6 +48,11 @@ type StreamResponse struct {
 				} `json:"virtuals"`
 			} `json:"post"`
 		} `json:"references"`
+		Paging struct {
+			Next struct {
+				To string `json:"to"`
+			} `json:"next"`
+		} `json:"paging"`
 	} `json:"payload"`
 }
 
@@ -67,41 +74,58 @@ func sendGetRequest(url string) (*http.Response, error) {
 }
 
 func main() {
-	resp, err := sendGetRequest("https://medium.com/_/api/topics/55f1c20aba7a/stream?limit=25")
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
+	var (
+		posts    []Post
+		to       string
+		baseURL  = "https://medium.com/_/api/topics/55f1c20aba7a/stream?limit=25"
+		numPages = flag.Int("pages", 1, "number of pages to process")
+	)
+	flag.Parse()
 
-	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		panic(err)
-	}
-
-	var streamResponse StreamResponse
-	b = b[16:]
-	err = json.Unmarshal(b, &streamResponse)
-	if err != nil {
-		panic(err)
-	}
-
-	var posts []Post
-
-	for postID, post := range streamResponse.Payload.References.Post {
-		creatorName := strings.ToLower(strings.Replace(streamResponse.Payload.References.User[post.CreatorID].Name, " ", "", -1))
-		p := Post{
-			Creator: Creator{
-				ID:   post.CreatorID,
-				Name: creatorName,
-			},
-			ID:             postID,
-			Title:          post.Title,
-			TotalClapCount: post.Virtuals.TotalClapCount,
-			UniqueSlug:     post.UniqueSlug,
-			URL:            fmt.Sprintf("https://medium.com/@%s/%s", creatorName, post.UniqueSlug),
+	for i := 0; i < *numPages; i++ {
+		url := baseURL
+		if to != "" {
+			url = url + "&to=" + to
 		}
 
-		posts = append(posts, p)
+		resp, err := sendGetRequest(url)
+		if err != nil {
+			panic(err)
+		}
+		defer resp.Body.Close()
+		time.Sleep(2 * time.Second)
+
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			panic(err)
+		}
+
+		// Remove "])}while(1);</x>" from beginning of slice
+		b = b[16:]
+		var streamResponse StreamResponse
+		err = json.Unmarshal(b, &streamResponse)
+		if err != nil {
+			panic(err)
+		}
+
+		for postID, post := range streamResponse.Payload.References.Post {
+			creatorName := strings.ToLower(strings.Replace(streamResponse.Payload.References.User[post.CreatorID].Name, " ", "", -1))
+			p := Post{
+				Creator: Creator{
+					ID:   post.CreatorID,
+					Name: creatorName,
+				},
+				ID:             postID,
+				Title:          post.Title,
+				TotalClapCount: post.Virtuals.TotalClapCount,
+				UniqueSlug:     post.UniqueSlug,
+				URL:            fmt.Sprintf("https://medium.com/@%s/%s", creatorName, post.UniqueSlug),
+			}
+
+			posts = append(posts, p)
+		}
+
+		to = streamResponse.Payload.Paging.Next.To
 	}
 
 	sort.Sort(sort.Reverse((ByTotalClapCount(posts))))
