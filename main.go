@@ -78,6 +78,7 @@ func main() {
 		posts    []Post
 		to       string
 		baseURL  = "https://medium.com/_/api/topics/55f1c20aba7a/stream?limit=25"
+		limit    = flag.Int("limit", 0, "max posts to display")
 		numPages = flag.Int("pages", 1, "number of pages to process")
 	)
 	flag.Parse()
@@ -125,10 +126,14 @@ func main() {
 			posts = append(posts, p)
 		}
 
+		sort.Sort(sort.Reverse((ByTotalClapCount(posts))))
+
+		if *limit != 0 && len(posts) > *limit {
+			posts = posts[:*limit]
+		}
+
 		to = streamResponse.Payload.Paging.Next.To
 	}
-
-	sort.Sort(sort.Reverse((ByTotalClapCount(posts))))
 
 	fmt.Println()
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
