@@ -132,9 +132,9 @@ func main() {
 
 	fmt.Println()
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
-	fmt.Fprintln(w, "Title\tTotal Clap Count\t URL")
-	for _, p := range posts {
-		fmt.Fprintf(w, "%s\t%d\t%s\n", p.Title, p.TotalClapCount, p.URL)
+	fmt.Fprintln(w, "#\tTitle\tTotal Clap Count\t URL")
+	for idx, p := range posts {
+		fmt.Fprintf(w, "%d\t%s\t%d\t%s\n", idx+1, p.Title, p.TotalClapCount, p.URL)
 	}
 	w.Flush()
 }
