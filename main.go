@@ -1,16 +1,14 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"sort"
 	"strings"
 	"text/tabwriter"
-	"time"
+
+	"github.com/richardpanda/applause/medium"
 )
 
 type Creator struct {
@@ -33,44 +31,14 @@ func (p ByTotalClapCount) Len() int           { return len(p) }
 func (p ByTotalClapCount) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 func (p ByTotalClapCount) Less(i, j int) bool { return p[i].TotalClapCount < p[j].TotalClapCount }
 
-type StreamResponse struct {
-	Payload struct {
-		References struct {
-			User map[string]struct {
-				Name string `json:"name"`
-			} `json:"user"`
-			Post map[string]struct {
-				CreatorID  string `json:"creatorId"`
-				Title      string `json:"title"`
-				UniqueSlug string `json:"uniqueSlug"`
-				Virtuals   struct {
-					TotalClapCount int `json:"totalClapCount"`
-				} `json:"virtuals"`
-			} `json:"post"`
-		} `json:"references"`
-		Paging struct {
-			Next struct {
-				To string `json:"to"`
-			} `json:"next"`
-		} `json:"paging"`
-	} `json:"payload"`
-}
-
-func sendGetRequest(url string) (*http.Response, error) {
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
+func printPosts(posts []Post) {
+	fmt.Println()
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
+	fmt.Fprintln(w, "#\tTitle\tTotal Clap Count\t URL")
+	for idx, p := range posts {
+		fmt.Fprintf(w, "%d\t%s\t%d\t%s\n", idx+1, p.Title, p.TotalClapCount, p.URL)
 	}
-
-	req.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2227.1 Safari/537.36")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, err
+	w.Flush()
 }
 
 func main() {
@@ -89,22 +57,7 @@ func main() {
 			url = url + "&to=" + to
 		}
 
-		resp, err := sendGetRequest(url)
-		if err != nil {
-			panic(err)
-		}
-		defer resp.Body.Close()
-		time.Sleep(2 * time.Second)
-
-		b, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			panic(err)
-		}
-
-		// Remove "])}while(1);</x>" from beginning of slice
-		b = b[16:]
-		var streamResponse StreamResponse
-		err = json.Unmarshal(b, &streamResponse)
+		streamResponse, err := medium.FetchStreamResponse(url)
 		if err != nil {
 			panic(err)
 		}
@@ -135,11 +88,5 @@ func main() {
 		to = streamResponse.Payload.Paging.Next.To
 	}
 
-	fmt.Println()
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
-	fmt.Fprintln(w, "#\tTitle\tTotal Clap Count\t URL")
-	for idx, p := range posts {
-		fmt.Fprintf(w, "%d\t%s\t%d\t%s\n", idx+1, p.Title, p.TotalClapCount, p.URL)
-	}
-	w.Flush()
+	printPosts(posts)
 }
