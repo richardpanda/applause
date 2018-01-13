@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"flag"
+	"fmt"
 	"time"
 
 	"github.com/richardpanda/applause/medium"
@@ -9,14 +11,20 @@ import (
 
 func main() {
 	var (
-		posts    medium.Posts
-		to       string
-		baseURL  = "https://medium.com/_/api/topics/55f1c20aba7a/stream?limit=25"
-		limit    = flag.Int("limit", 0, "max posts to display")
-		numPages = flag.Int("pages", 1, "number of pages to process")
+		posts     medium.Posts
+		to        string
+		limit     = flag.Int("limit", 0, "max posts to display")
+		numPages  = flag.Int("pages", 1, "number of pages to process")
+		topicName = flag.String("topic", "software-engineering", "topic to crawl")
 	)
 	flag.Parse()
 
+	topicID, ok := medium.GetTopicID(*topicName)
+	if !ok {
+		panic(errors.New("unknown topic"))
+	}
+
+	baseURL := fmt.Sprintf("https://medium.com/_/api/topics/%s/stream?limit=25", topicID)
 	for i := 0; i < *numPages; i++ {
 		url := baseURL
 		if to != "" {
