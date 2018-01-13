@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"time"
 )
 
 type StreamResponse struct {
@@ -53,7 +52,6 @@ func FetchStreamResponse(url string) (*StreamResponse, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	time.Sleep(2 * time.Second)
 
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

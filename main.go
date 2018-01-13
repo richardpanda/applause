@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"time"
 
 	"github.com/richardpanda/applause/medium"
 )
@@ -29,6 +30,8 @@ func main() {
 
 		posts.Append(medium.PostsFromResponse(streamResponse))
 		to = streamResponse.Payload.Paging.Next.To
+
+		time.Sleep(2 * time.Second)
 	}
 
 	posts.SortByClapsDESC()
