@@ -1,6 +1,7 @@
 package medium
 
 import (
+	"errors"
 	"regexp"
 	"strings"
 
@@ -78,12 +79,22 @@ func FetchTopicIDs() (map[string]string, error) {
 		return nil, err
 	}
 
-	doc.Find(".u-flexColumn").Each(func(i int, s *goquery.Selection) {
+	doc.Find(".u-flexColumn").EachWithBreak(func(i int, s *goquery.Selection) bool {
 		name := strings.Replace(strings.ToLower(s.Find("a").Text()), " ", "-", -1)
-		dataActionSource, _ := s.Find("button").Attr("data-action-source")
+		dataActionSource, ok := s.Find("button").Attr("data-action-source")
+		if !ok {
+			err = errors.New("unable to find data-action-source")
+			return false
+		}
+
 		id := topicIDRegex.FindStringSubmatch(dataActionSource)[1]
 		out[name] = id
+		return true
 	})
+
+	if err != nil {
+		return nil, err
+	}
 
 	return out, nil
 }
