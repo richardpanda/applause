@@ -17,20 +17,20 @@ go run main.go --limit 25 --pages 10 --topic software-engineering
 ### Command Line Options
 ```
 Optional Flags:
-  --limit <int>     number of posts to display  default: 0 (display all posts)
-  --pages <int>     number of pages to visit    default: 1
-  --topic <string>  topic to visit              default: software-engineering
+  --limit <int>     max number of posts to display  default: 0 (display all posts)
+  --pages <int>     number of pages to visit        default: 1
+  --topic <string>  topic to visit                  default: software-engineering
   
 Valid Topics:
-  1. art
-  2. artificial-intelligence
-  3. basic-income
-  4. business
-  5. comics
-  6. creativity
-  7. cryptocurrency
-  8. culture
-  9. cybersecurity
+  1.  art
+  2.  artificial-intelligence
+  3.  basic-income
+  4.  business
+  5.  comics
+  6.  creativity
+  7.  cryptocurrency
+  8.  culture
+  9.  cybersecurity
   10. data-science
   11. digital-design
   12. economy
