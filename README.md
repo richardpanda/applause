@@ -75,3 +75,4 @@ Valid Topics:
   51. work
   52. world
 ```
+*Note: For each API request, the program sleeps for 2 seconds to avoid overloading Medium's server. Therefore, visiting 5 pages will take at least 10 seconds for the program to finish execution.*
